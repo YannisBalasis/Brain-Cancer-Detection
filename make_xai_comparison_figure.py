@@ -256,56 +256,62 @@ ROW_LABELS = ["Original MRI", "4-Class CNN\n(Grad-CAM)", "MedViT V2\n(Grad-CAM)"
 CMAP       = "jet"
 ALPHA      = 0.45
 
-fig = plt.figure(figsize=(15, 6.5))
-outer = gridspec.GridSpec(3, 4, figure=fig, wspace=0.04, hspace=0.12,
-                          left=0.12)   # leave room for row labels
+fig = plt.figure(figsize=(15, 7.5))
+outer = gridspec.GridSpec(3, 4, figure=fig, wspace=0.05, hspace=0.32,
+                          left=0.14, right=0.98, top=0.90, bottom=0.10)
+
+axes_grid = {}
+for row in range(3):
+    for col in range(4):
+        ax = fig.add_subplot(outer[row, col])
+        ax.axis("off")
+        axes_grid[(row, col)] = ax
 
 for col, display_cls in enumerate(DISPLAY_CLASSES):
     img = selected_imgs[display_cls]
 
-    for row in range(3):
-        ax = fig.add_subplot(outer[row, col])
-        ax.axis("off")
+    # Row 0: Original MRI
+    ax = axes_grid[(0, col)]
+    ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
+    ax.set_title(display_cls, fontsize=11, fontweight="bold", pad=5)
 
-        if row == 0:
-            ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
-            if col == 0:
-                ax.text(-0.18, 0.5, ROW_LABELS[0],
-                        transform=ax.transAxes, fontsize=9, fontweight="bold",
-                        va="center", ha="right", rotation=90)
+    # Row 1: CNN Grad-CAM
+    ax = axes_grid[(1, col)]
+    cam  = cnn_cams[display_cls]
+    over = overlay_cam(img, cam, alpha=ALPHA)
+    ax.imshow(over)
+    ax.text(0.5, -0.07, f"conf = {cnn_confs[display_cls]:.3f}",
+            transform=ax.transAxes, fontsize=9, ha="center", va="top",
+            color="#222", clip_on=False)
 
-        elif row == 1:
-            import cv2
-            cam  = cnn_cams[display_cls]
-            over = overlay_cam(img, cam, alpha=ALPHA)
-            ax.imshow(over)
-            if col == 0:
-                ax.text(-0.18, 0.5, ROW_LABELS[1],
-                        transform=ax.transAxes, fontsize=9, fontweight="bold",
-                        va="center", ha="right", rotation=90)
-            ax.text(0.5, -0.04, f"conf = {cnn_confs[display_cls]:.2f}",
-                    transform=ax.transAxes, fontsize=7.5,
-                    ha="center", va="top", color="#333")
+    # Row 2: MedViT Grad-CAM
+    ax = axes_grid[(2, col)]
+    cam  = medvit_cams[display_cls]
+    over = overlay_cam(img, cam, alpha=ALPHA)
+    ax.imshow(over)
+    ax.text(0.5, -0.07, f"conf = {medvit_confs[display_cls]:.3f}",
+            transform=ax.transAxes, fontsize=9, ha="center", va="top",
+            color="#222", clip_on=False)
 
-        else:
-            cam  = medvit_cams[display_cls]
-            over = overlay_cam(img, cam, alpha=ALPHA)
-            ax.imshow(over)
-            if col == 0:
-                ax.text(-0.18, 0.5, ROW_LABELS[2],
-                        transform=ax.transAxes, fontsize=9, fontweight="bold",
-                        va="center", ha="right", rotation=90)
-            ax.text(0.5, -0.04, f"conf = {medvit_confs[display_cls]:.2f}",
-                    transform=ax.transAxes, fontsize=7.5,
-                    ha="center", va="top", color="#333")
+# Row labels using figure.text (avoids axes clipping)
+row_label_x = 0.01
+row_centers_y = []
+for row in range(3):
+    axs_in_row = [axes_grid[(row, c)] for c in range(4)]
+    bboxes = [ax.get_position() for ax in axs_in_row]
+    y_mid = np.mean([(b.y0 + b.y1) / 2 for b in bboxes])
+    row_centers_y.append(y_mid)
 
-        if row == 0:
-            ax.set_title(display_cls, fontsize=10, fontweight="bold", pad=4)
+for row, (label, y_mid) in enumerate(zip(ROW_LABELS, row_centers_y)):
+    fig.text(row_label_x, y_mid, label,
+             ha="left", va="center", fontsize=10, fontweight="bold",
+             rotation=90,
+             transform=fig.transFigure)
 
 # Master title
 fig.suptitle(
     "Grad-CAM Comparison: 4-Class CNN vs MedViT V2",
-    fontsize=12, y=1.01
+    fontsize=13, fontweight="bold", y=0.97
 )
 
 out_pdf = "xai_comparison_cnn_vs_medvit.pdf"
