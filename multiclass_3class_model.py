@@ -544,24 +544,7 @@ def main():
     
     # Compile model
     model.compile_model()
-    
-    # Note: You would need to provide the actual data path
-    # data_path = "/path/to/your/tumor/dataset"  # Only glioma, meningioma, pituitary folders
-    # X, y, class_counts = model.load_and_preprocess_data(data_path)
-    # X_train, X_val, X_test, y_train, y_val, y_test = model.create_data_splits(X, y)
-    # 
-    # # Train model
-    # model.train_model(X_train, y_train, X_val, y_val)
-    # 
-    # # Evaluate model
-    # results = model.evaluate_model(X_test, y_test)
-    # 
-    # # Create visualizations
-    # model.plot_training_history()
-    # model.plot_confusion_matrix(results['confusion_matrix'])
-    
-    print("\n✅ 3-Class Tumor Classification Model Implementation Complete!")
-    print("📁 All files ready for training")
+
 
 if __name__ == "__main__":
     main()

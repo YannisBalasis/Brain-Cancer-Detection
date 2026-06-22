@@ -596,26 +596,7 @@ def main():
     # Compile model
     model.compile_model()
     
-    # Note: You would need to provide the actual data path
-    # data_path = "/path/to/your/4class/dataset"
-    # X, y, class_counts = model.load_and_preprocess_data(data_path)
-    # X_train, X_val, X_test, y_train, y_val, y_test = model.create_data_splits(X, y)
-    # 
-    # # Train model
-    # model.train_model(X_train, y_train, X_val, y_val)
-    # 
-    # # Evaluate model
-    # results = model.evaluate_model(X_test, y_test)
-    # 
-    # # Create visualizations
-    # model.plot_training_history()
-    # model.plot_confusion_matrix(results['confusion_matrix'])
-    # 
-    # # Save everything
-    # final_results = model.save_model_and_results(results)
-    
-    print("\n✅ 4-Class Multiclass Model Implementation Complete!")
-    print("📁 All files saved in /home/claude/")
+
 
 if __name__ == "__main__":
     main()

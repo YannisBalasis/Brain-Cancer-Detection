@@ -29,22 +29,23 @@ set are given in Table~\ref{tab:perclass}.
   Model numbers correspond directly to those in Table~1.
   Friedman average rank (lower = better) and Bonferroni-adjusted p-values
   (§\ref{subsec:stats}) are computed on the same subset.
-  Binary~CNN performs two-class (Tumour/No~Tumour) detection only.}
+  Binary~CNN performs two-class (Tumour/No~Tumour) detection only.
+  Accuracy is reported with 95\% Wilson score confidence intervals.}
 \label{tab:performance}
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{llccccc}
+\begin{tabular}{llcccccc}
 \toprule
-\# & Model & Accuracy (\%) & Macro F1 (\%) & Macro AUC & Params (M) & Avg.\ Rank \\
+\# & Model & Accuracy (\%) (95\% CI) & Macro F1 (\%) & Macro AUC & Params (M) & GPU Infer.\ (ms) & Avg.\ Rank \\
 \midrule
-1 & Binary CNN            & 98.60 & 98.60 & 0.999 & 1.44  & 4.757 \\
-2 & 4-Class CNN           & 98.01 & 98.00 & 0.998 & 1.28  & 4.945 \\
-3 & 3-Class CNN           & 97.80 & 97.80 & 0.997 & 1.28  & 4.856 \\
-4 & 1-vs-1 Ensemble       & 97.60 & 97.60 & 0.997 & 3.84  & 5.053 \\
-5 & ResNet-50 Dual        & 76.85 & 76.80 & 0.952 & 26.1  & 5.339 \\
-6 & EfficientNet-B3 Dual  & 86.03 & 86.00 & 0.974 & 12.8  & 5.097 \\
-7 & Multi-Dual System     & 93.41 & 93.40 & 0.991 & 1.68  & 4.990 \\
-8 & MedViT~V2 Base        & 93.03 & 92.80 & 0.992 & 49.31 & 5.124 \\
-9 & MedViT~V2 Dual        & 98.15 & 98.13 & 0.9998 & 49.94 & 4.838 \\
+1 & Binary CNN            & 98.60 (97.2--99.3) & 98.60 & 0.999  & 1.44  & $281.6 \pm 31.3$ & 4.757 \\
+2 & 4-Class CNN           & 98.01 (96.4--98.9) & 98.00 & 0.998  & 1.28  & $287.4 \pm 27.7$ & 4.945 \\
+3 & 3-Class CNN           & 97.80 (96.1--98.8) & 97.80 & 0.997  & 1.28  & $270.5 \pm 27.1$ & 4.856 \\
+4 & 1-vs-1 Ensemble       & 97.60 (95.9--98.6) & 97.60 & 0.997  & 3.84  & ---              & 5.053 \\
+5 & ResNet-50 Dual        & 76.85 (73.0--80.3) & 76.80 & 0.952  & 26.1  & $295.2 \pm 28.6$ & 5.339 \\
+6 & EfficientNet-B3 Dual  & 86.03 (82.7--88.8) & 86.00 & 0.974  & 12.8  & $294.3 \pm 30.1$ & 5.097 \\
+7 & Multi-Dual System     & 93.41 (90.9--95.3) & 93.40 & 0.991  & 1.68  & $269.5 \pm 26.8$ & 4.990 \\
+8 & MedViT~V2 Base        & 93.03 (90.5--95.0) & 92.80 & 0.992  & 49.31 & $289.2 \pm 26.0$ & 5.124 \\
+9 & MedViT~V2 Dual        & 98.15 (96.6--99.0) & 98.13 & 0.9998 & 49.94 & $303.2 \pm 31.1$ & 4.838 \\
 \bottomrule
 \end{tabular}}
 \end{table*}
@@ -254,3 +255,44 @@ representations. This finding highlights the diagnostic value of XAI analysis
 as a complement to accuracy metrics: a model can reliably detect where a
 pathology is located while simultaneously encountering difficulty in determining
 which subtype it represents.
+
+\subsection{Ablation Study: MedViT~V2 Dual-Branch Design}
+\label{subsec:ablation}
+
+Table~\ref{tab:ablation} isolates the contribution of each architectural
+component in the MedViT~V2~Dual system by comparing four configurations that
+share the same evaluation protocol (503-sample common subset).
+
+\begin{table}[ht]
+\centering
+\caption{Ablation of the MedViT~V2~Dual architecture. Accuracy reported on
+  the 503-sample tumour-positive evaluation subset. $\Delta$ is relative to
+  the 4-Class~CNN baseline.}
+\label{tab:ablation}
+\begin{tabular}{llcc}
+\toprule
+System & Branches & Accuracy (\%) & $\Delta$ \\
+\midrule
+4-Class CNN       & CNN only                    & 98.01 & baseline  \\
+MedViT~V2 Base    & Transformer only            & 93.03 & $-$4.98pp \\
+Multi-Dual System & CNN + CNN + fusion          & 93.41 & $-$4.60pp \\
+MedViT~V2 Dual    & Transformer + CNN + fusion  & 98.15 & $+$0.14pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three conclusions follow directly from Table~\ref{tab:ablation}.
+First, dual-branch fusion alone does not drive performance: the Multi-Dual
+System (CNN\,+\,CNN, 93.41\%) underperforms the single 4-Class~CNN (98.01\%),
+attributable to the additional optimisation complexity introduced by the
+masked loss function applied to the 3-class branch (which excludes
+No~Tumour samples from gradient updates).
+Second, transformer representations alone are insufficient: MedViT~V2~Base
+achieves only 93.03\% as a single-branch model.
+Third, the interaction between branches is \emph{synergistic rather than
+additive}: combining the transformer and CNN branches in MedViT~V2~Dual
+(98.15\%) recovers full CNN-level performance that neither branch achieves
+independently, rather than averaging to the expected $\sim$95.5\%.
+The decisive factor is the complementarity between transformer global
+self-attention and CNN local feature extraction: each branch compensates for
+the representational blind spots of the other.
